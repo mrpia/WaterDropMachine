@@ -1,151 +1,140 @@
 
 /* Water Drop Machine V1
-*
-* Sketch that control the waterDropMachin created to perform water drop photography.
-* The system is based on arduino and a solenoid valve that drops water at a regular time interval.
-* The flash and the camero trigger are automatically triggered at predefined interval.
-* By Antranik Zekian, 2021 - part of the code freely inspired from the code "Water Drop Controller V4" by Gareth Bellamy
-*
-*/
+ *
+ * Sketch that control the waterDropMachine created to perform water drop photography.
+ * The system is based on arduino and a solenoid valve that drops water at a regular time interval.
+ * The flash and the camero trigger are automatically triggered at predefined interval.
+ * By Antranik Zekian, 2021 - part of the code freely inspired from the code "Water Drop Controller V4" by Gareth Bellamy
+ * Refactored by Pierre-Arnaud Galiana - 2023
+ */
 
+// Constants
+const int CAMERA_BUTTON_HOLD_TIME = 100;
 
-//Constant declaration
-const int DELAY_CAM_FLASH = 100; // delay between the camera triggering and the flash triggering
-const int CAMERA_BUTTON_HOLD_TIME = 100; // delay between the camera triggering and the flash triggering
+// Arduino pins
+const int camPIN = 3; // pin for camera
+const int solPIN = 8; // pin for soleniod valve
 
-//Arduino pin declaration
-const int camPIN = 3;        //Set camPIN (camera) to pin 3
-const int flashPIN = 4;        //Set camPIN (camera) to pin 3
-const int solPIN = 8;        //Set solPIN (soleniod valve) to pin 8
-
-int inputs[5] = {0, 0, 0, 0, 0}; //{1st drop size, 2nd drop size, valve delay, camera delay, iterations}
-
-
-
-
-void displayValues()
+struct captureData
 {
+  int drop1;
+  int dropDelay;
+  int drop2;
+  int camDelay;
+};
 
-  int i =0;
-      
-  while (i<5)
+struct iterationsData
+{
+  int numberOfIterations;
+  int delayBetweenIterations;
+};
+
+captureData readCaptureData()
+{
+  Serial.println("Enter the capture values in milliseconds - Format: drop1,dropDelay,drop2,camDelay");
+  int drop1 = Serial.parseInt();
+  int dropDelay = Serial.parseInt();
+  int drop2 = Serial.parseInt();
+  int camDelay = Serial.parseInt();
+  return {
+    drop1 : drop1,
+    dropDelay : dropDelay,
+    drop2 : drop2,
+    camDelay : camDelay
+  };
+}
+
+iterationsData readIterationsData()
+{
+  Serial.println("Enter the iterations values in milliseconds - Format: numberOfIterations,delayBetweenIterations");
+  int numberOfIterations = Serial.parseInt();
+  int delayBetweenIterations = Serial.parseInt();
+  return {
+    numberOfIterations : numberOfIterations,
+    delayBetweenIterations : delayBetweenIterations
+  };
+}
+
+void displayCaptureData(captureData captureData)
+{
+  Serial.println("Capture values: ");
+  Serial.println("- drop1           : " + captureData.drop1);
+  Serial.println("- dropDelay       : " + captureData.dropDelay);
+  Serial.println("- drop2           : " + captureData.drop2);
+  Serial.println("- camDelay        : " + captureData.camDelay);
+}
+
+void displayIterationsData(iterationsData iterationsData)
+{
+  Serial.println("Iterations values: ");
+  Serial.println("- iterations      : " + iterationsData.numberOfIterations);
+  Serial.println("- iterationsDelay : " + iterationsData.delayBetweenIterations);
+}
+
+void printIteration(int iteration, int numberOfIterations)
+{
+  Serial.print("INFO: iteration #");
+  Serial.print(iteration);
+  Serial.print("/");
+  Serial.println(numberOfIterations);
+}
+
+void printIterationDelay(int delayBetweenIterations)
+{
+  Serial.print("INFO: waiting for ");
+  Serial.print(delayBetweenIterations);
+  Serial.println("ms before next iteration");
+}
+
+void launchCapture(captureData captureData)
+{
+  digitalWrite(solPIN, HIGH); // Opens solenoid valve
+  delay(captureData.drop1);   // Valve stays open for time value drop1 -> define 1st drop size
+  digitalWrite(solPIN, LOW);  // Closes solenoid valve
+
+  delay(captureData.dropDelay); // Time delay between drops
+
+  digitalWrite(solPIN, HIGH); // Opens solenoid valve
+  delay(captureData.drop2);   // Valve stays open for time value drop2 - 2nd drop size
+  digitalWrite(solPIN, LOW);  // Closes solenoid valve
+
+  delay(captureData.camDelay); // Time delay for camera activation
+
+  digitalWrite(camPIN, HIGH);     // Sets camPIN to high - fires camera
+  delay(CAMERA_BUTTON_HOLD_TIME); // Holds camPIN high for set delay to ensure signal
+  digitalWrite(camPIN, LOW);      // Sets camPIN to low
+}
+
+void setup()
+{
+  Serial.begin(9600);      // Start the Serial Monitor
+  pinMode(camPIN, OUTPUT); // Set camPIN to an output
+  pinMode(solPIN, OUTPUT); // Set solPIN to an output
+}
+
+void loop()
+{
+  captureData captureData = readCaptureData();
+  iterationsData iterationsData = readIterationsData();
+  displayCaptureData(captureData);
+  displayIterationsData(iterationsData);
+
+  int iteration = 0;
+  while (iteration < iterationsData.numberOfIterations)
   {
-    Serial.println("Display value in memory:");
-    Serial.print(inputs[i]);
-    Serial.print("|");  
-    i++;
-  }
-  
-  Serial.print("|");  
-
-}
-
-/*
-Function that launch the water dropping and capture actions
-DropOneSize - 1st drop size input variable (milliseconds)
-DropTwoSize - 2nd drop size input variable (milliseconds)
-SolDelay - Set delay between drops (milliseconds)
-CamDelay - Set delay between drops and camera activation (milliseconds)
-*/
-
-void launchCapture(int DropOneSize,int DropTwoSize,int SolDelay,int CamDelay)
-{
-  
-  digitalWrite (solPIN, HIGH);            //Opens solenoid valve
-  delay (DropOneSize);                    //Valve stays open for time value DropOneSize -> define 1st drop size
-  digitalWrite (solPIN, LOW);             //Closes solenoid valve
-  
-  delay (SolDelay);                       //Time delay between drops
-  digitalWrite (solPIN, HIGH);            //Opens solenoid valve
-  delay (DropTwoSize);                    //Valve stays open for time value DropTwoSize - 2nd drop size
-  digitalWrite (solPIN, LOW);             //Closes solenoid valve
-  
-  delay (CamDelay);                       //Time delay for camera activation
-  
-  digitalWrite (camPIN, HIGH);            //Sets camPIN to high - fires camera
-  delay (DELAY_CAM_FLASH);                //Holds camPIN high for 100 milliseconds before firing the flash
-  digitalWrite (flashPIN, HIGH);          //Sets flashcamPIN to high - trigger flash
-  delay (CAMERA_BUTTON_HOLD_TIME);        //Holds camPIN high for 100 milliseconds to ensure signal
-  digitalWrite (flashPIN, LOW);             //Sets flashPIN to low
-  digitalWrite (camPIN, LOW);               //Sets camPIN to low
-  
-}
-
-
-
-void setup() {
-
-  //Initial Configuration of Arduino setup
-  
-   Serial.begin(9600);                //Start the Serial Monitor
-   pinMode (camPIN, OUTPUT);          //Set camPIN to an output
-   pinMode (flashPIN, OUTPUT);        //Set flashPIN  to an output
-   pinMode (solPIN, OUTPUT);          //Set solPIN to an output
-
-}
-
-
-void loop() {
-   
-//Here is where the time delays will be entered into the serial monitor
-
-   Serial.println("Enter the settings - Format: ");
-   Serial.println("1st drop size (ms) | 2nd drop size (ms) in milliseconds | Valve Delay (ms) | Camera Delay (ms) | Iteration");               //Print text asking for 1st drop size
-   
-   if (Serial.available() > 0) {
-
-    char buff[32];
-    int returned = Serial.readBytesUntil('\n', buff, 32);
-    buff[31] = 0;    
-    char *values = strtok(buff, "|");
-    
-    // Check data typed and convert them into int
-    if (returned == 0) {
-    
-      Serial.println("ERROR: invalid data received");
-    
-    } else {
-    
-      Serial.println("INFO: valid data received");
-      
-      int i = 0;
-      
-      while (values != NULL) {
-        
-        int val = atoi(values);
-        Serial.println(val);
-        inputs[i] = val;
-        i++;
-        values = strtok(NULL, "|");
-      
-      }
-      
-      // check if a valid number of inputs was found
-      if (i == 5) {
-        
-        displayValues();
-
-        int Iteration = inputs[4];
-        int j=0;
-        
-        while (j < Iteration )
-        {
-          Serial.print("INFO: iteration #");
-          Serial.print(j);
-          launchCapture(inputs[0],inputs[1],inputs[2],inputs[3]);
-          j++;
-          Serial.println("   COMPLETED");
-        }
-        
-      }else{
-        
-        Serial.println("ERROR: number of values received incorrect");
-        
-      }
-      
+    printIteration(iteration, iterationsData.numberOfIterations);
+    launchCapture(captureData);
+    iteration++;
+    if (iteration < iterationsData.numberOfIterations)
+    {
+      printIterationDelay(iterationsData.delayBetweenIterations);
+      delay(iterationsData.delayBetweenIterations);
     }
+    else
+    {
+      Serial.println("INFO: last iteration completed");
+    }
+  }
 
-   }
-   
-   Serial.println("INFO: end of loop()");
+  Serial.println("INFO: end of loop()");
 }
