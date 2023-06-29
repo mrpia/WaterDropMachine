@@ -6,7 +6,7 @@
  * The flash and the camero trigger are automatically triggered at predefined interval.
  * By Antranik Zekian, 2021 - part of the code freely inspired from the code "Water Drop Controller V4" by Gareth Bellamy
  * Refactored by Pierre-Arnaud Galiana - 2023
- */
+ */ 
 
 // Constants
 const int CAMERA_BUTTON_HOLD_TIME = 100;
@@ -29,13 +29,19 @@ struct iterationsData
   int delayBetweenIterations;
 };
 
+int readInt()
+{
+  while(Serial.available()==0) {}  
+  return Serial.parseInt();
+}
+
 captureData readCaptureData()
 {
   Serial.println("Enter the capture values in milliseconds - Format: drop1,dropDelay,drop2,camDelay");
-  int drop1 = Serial.parseInt();
-  int dropDelay = Serial.parseInt();
-  int drop2 = Serial.parseInt();
-  int camDelay = Serial.parseInt();
+  int drop1 = readInt();
+  int dropDelay = readInt();
+  int drop2 = readInt();
+  int camDelay = readInt();
   return {
     drop1 : drop1,
     dropDelay : dropDelay,
@@ -47,8 +53,8 @@ captureData readCaptureData()
 iterationsData readIterationsData()
 {
   Serial.println("Enter the iterations values in milliseconds - Format: numberOfIterations,delayBetweenIterations");
-  int numberOfIterations = Serial.parseInt();
-  int delayBetweenIterations = Serial.parseInt();
+  int numberOfIterations = readInt();
+  int delayBetweenIterations = readInt();
   return {
     numberOfIterations : numberOfIterations,
     delayBetweenIterations : delayBetweenIterations
@@ -114,8 +120,21 @@ void setup()
 
 void loop()
 {
-  captureData captureData = readCaptureData();
-  iterationsData iterationsData = readIterationsData();
+  // captureData captureData = readCaptureData();
+  // iterationsData iterationsData = readIterationsData();
+
+  captureData captureData = {
+    drop1 : 100,
+    dropDelay : 100,
+    drop2 : 100,
+    camDelay : 200
+  };
+
+  iterationsData iterationsData = {
+    numberOfIterations : 10,
+    delayBetweenIterations : 1000
+  };
+
   displayCaptureData(captureData);
   displayIterationsData(iterationsData);
 
