@@ -1,0 +1,6 @@
+{
+    "board": "arduino:avr:leonardo",
+    "port": "/dev/tty.usbmodem141101",
+    "sketch": "./WaterDropMachine.ino",
+    "output": "../ArduinoOutput"
+}

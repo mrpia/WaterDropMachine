@@ -6,7 +6,7 @@
  * The flash and the camero trigger are automatically triggered at predefined interval.
  * By Antranik Zekian, 2021 - part of the code freely inspired from the code "Water Drop Controller V4" by Gareth Bellamy
  * Refactored by Pierre-Arnaud Galiana - 2023
- */ 
+ */
 
 // Constants
 const int CAMERA_BUTTON_HOLD_TIME = 100;
@@ -29,19 +29,22 @@ struct iterationsData
   int delayBetweenIterations;
 };
 
-int readInt()
+int readInt(String message = "")
 {
-  while(Serial.available()==0) {}  
+  Serial.println(message);
+  while (Serial.available() == 0)
+  {
+  }
   return Serial.parseInt();
 }
 
 captureData readCaptureData()
 {
-  Serial.println("Enter the capture values in milliseconds - Format: drop1,dropDelay,drop2,camDelay");
-  int drop1 = readInt();
-  int dropDelay = readInt();
-  int drop2 = readInt();
-  int camDelay = readInt();
+  Serial.println("Enter the capture values in milliseconds:");
+  int drop1 = readInt("- drop1:");
+  int dropDelay = readInt("- dropDelay:");
+  int drop2 = readInt("- drop2:");
+  int camDelay = readInt("- camDelay:");
   return {
     drop1 : drop1,
     dropDelay : dropDelay,
@@ -52,9 +55,9 @@ captureData readCaptureData()
 
 iterationsData readIterationsData()
 {
-  Serial.println("Enter the iterations values in milliseconds - Format: numberOfIterations,delayBetweenIterations");
-  int numberOfIterations = readInt();
-  int delayBetweenIterations = readInt();
+  Serial.println("Enter the iterations values in milliseconds:");
+  int numberOfIterations = readInt("- numberOfIterations:");
+  int delayBetweenIterations = readInt("- delayBetweenIterations:");
   return {
     numberOfIterations : numberOfIterations,
     delayBetweenIterations : delayBetweenIterations
@@ -64,17 +67,23 @@ iterationsData readIterationsData()
 void displayCaptureData(captureData captureData)
 {
   Serial.println("Capture values: ");
-  Serial.println("- drop1           : " + captureData.drop1);
-  Serial.println("- dropDelay       : " + captureData.dropDelay);
-  Serial.println("- drop2           : " + captureData.drop2);
-  Serial.println("- camDelay        : " + captureData.camDelay);
+  Serial.print("- drop1           : ");
+  Serial.println(captureData.drop1);
+  Serial.print("- dropDelay       : ");
+  Serial.println(captureData.dropDelay);
+  Serial.print("- drop2           : ");
+  Serial.println(captureData.drop2);
+  Serial.print("- camDelay        : ");
+  Serial.println(captureData.camDelay);
 }
 
 void displayIterationsData(iterationsData iterationsData)
 {
   Serial.println("Iterations values: ");
-  Serial.println("- iterations      : " + iterationsData.numberOfIterations);
-  Serial.println("- iterationsDelay : " + iterationsData.delayBetweenIterations);
+  Serial.print("- iterations      : ");
+  Serial.println(iterationsData.numberOfIterations);
+  Serial.print("- iterationsDelay : ");
+  Serial.println(iterationsData.delayBetweenIterations);
 }
 
 void printIteration(int iteration, int numberOfIterations)
@@ -120,30 +129,17 @@ void setup()
 
 void loop()
 {
-  // captureData captureData = readCaptureData();
-  // iterationsData iterationsData = readIterationsData();
-
-  captureData captureData = {
-    drop1 : 100,
-    dropDelay : 100,
-    drop2 : 100,
-    camDelay : 200
-  };
-
-  iterationsData iterationsData = {
-    numberOfIterations : 10,
-    delayBetweenIterations : 1000
-  };
+  captureData captureData = readCaptureData();
+  iterationsData iterationsData = readIterationsData();
 
   displayCaptureData(captureData);
   displayIterationsData(iterationsData);
 
-  int iteration = 0;
-  while (iteration < iterationsData.numberOfIterations)
+  int iteration = 1;
+  while (iteration <= iterationsData.numberOfIterations)
   {
     printIteration(iteration, iterationsData.numberOfIterations);
     launchCapture(captureData);
-    iteration++;
     if (iteration < iterationsData.numberOfIterations)
     {
       printIterationDelay(iterationsData.delayBetweenIterations);
@@ -153,6 +149,7 @@ void loop()
     {
       Serial.println("INFO: last iteration completed");
     }
+    iteration++;
   }
 
   Serial.println("INFO: end of loop()");
